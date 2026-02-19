@@ -53,7 +53,7 @@ export default function ShowcaseDetailPage() {
 
       const promises = [
         getBuildParts(b.id),
-        getBuilderProfile(b.user_id),
+        getBuilderProfile(b.creator_id),
         getRatings(b.id),
         getComments(b.id),
       ];
@@ -108,7 +108,7 @@ export default function ShowcaseDetailPage() {
     );
   }
 
-  const isOwner = isAuthenticated && user.id === build.user_id;
+  const isOwner = isAuthenticated && user.id === build.creator_id;
 
   const handleToggleLike = async () => {
     if (!isAuthenticated) return;
@@ -158,7 +158,7 @@ export default function ShowcaseDetailPage() {
     try {
       await createInquiry({
         build_id: build.id,
-        builder_id: build.user_id,
+        builder_id: build.creator_id,
         message: inquiryMessage.trim(),
       });
       setInquiryMessage('');
@@ -350,7 +350,7 @@ export default function ShowcaseDetailPage() {
                         <strong>
                           {rating.user_id ? (
                             <Link to={`/profile/${rating.user_id}`}>
-                              {rating.user_display_name || 'Unknown User'}
+                              {rating.creator_display_name || 'Unknown User'}
                             </Link>
                           ) : (
                             'Unknown User'
@@ -406,7 +406,7 @@ export default function ShowcaseDetailPage() {
                           <strong>
                             {comment.user_id ? (
                               <Link to={`/profile/${comment.user_id}`}>
-                                {comment.user_display_name || 'Unknown User'}
+                                {comment.creator_display_name || 'Unknown User'}
                               </Link>
                             ) : (
                               'Unknown User'
@@ -427,7 +427,7 @@ export default function ShowcaseDetailPage() {
                                   <strong>
                                     {reply.user_id ? (
                                       <Link to={`/profile/${reply.user_id}`}>
-                                        {reply.user_display_name || 'Unknown User'}
+                                        {reply.creator_display_name || 'Unknown User'}
                                       </Link>
                                     ) : (
                                       'Unknown User'
@@ -458,11 +458,11 @@ export default function ShowcaseDetailPage() {
               <h3>Builder</h3>
             </div>
             <div className="card__body">
-              {build.user_id ? (
+              {build.creator_id ? (
                 <div>
                   <h4>
-                    <Link to={`/profile/${build.user_id}`}>
-                      {build.user_display_name || 'Unknown Builder'}
+                    <Link to={`/profile/${build.creator_id}`}>
+                      {build.creator_display_name || 'Unknown Builder'}
                     </Link>
                   </h4>
 

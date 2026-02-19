@@ -27,7 +27,7 @@ export default function Navbar() {
               {isAdmin && (
                 <>
                   <Link to="/admin/dashboard">Admin</Link>
-                  {/* <Link to="/admin/rules">Rules</Link> */}
+                  <Link to="/admin/rules">Rules</Link>
                 </>
               )}
               <div className="navbar__user">

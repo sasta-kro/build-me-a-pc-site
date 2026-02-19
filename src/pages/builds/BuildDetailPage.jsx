@@ -98,7 +98,8 @@ export default function BuildDetailPage() {
       const partMap = {};
       bp.forEach(({ part, category }) => {
         if (part && category) {
-          partMap[category.slug] = part;
+          const slug = category.name?.toLowerCase().replace(/\s+/g, '-') || '';
+          partMap[slug] = part;
         }
       });
 
@@ -206,7 +207,6 @@ export default function BuildDetailPage() {
 
       await createItem('build_requests', {
         build_id: build.id,
-        user_id: user.id,
         budget: Number(requestBudget) || 0,
         purpose: requestPurpose.trim() || null,
         notes: requestNotes.trim() || null,
@@ -252,13 +252,13 @@ export default function BuildDetailPage() {
     );
   }
 
-  const isOwner = user && user.id === build.user_id;
+  const isOwner = user && user.id === build.creator_id;
   const totalPrice = parts.reduce((sum, bp) => sum + (bp.part ? bp.part.price : 0), 0);
   const commentTree = buildCommentTree(comments);
   const errors = compatIssues.filter(i => i.severity === 'error');
   const warnings = compatIssues.filter(i => i.severity === 'warning');
   const hasActiveRequest = !!activeRequest;
-  const isOwnRequest = activeRequest && user && activeRequest.user_id === user.id;
+  const isOwnRequest = activeRequest && user && activeRequest.creator_id === user.id;
 
   return (
     <div className="page">
@@ -272,8 +272,8 @@ export default function BuildDetailPage() {
             )}
             <p className="build-detail__author">
               by{' '}
-              {build.user_display_name ? (
-                <Link to={`/profile/${build.user_id}`}>{build.user_display_name}</Link>
+              {build.creator_display_name ? (
+                <Link to={`/profile/${build.creator_id}`}>{build.creator_display_name}</Link>
               ) : (
                 'Unknown'
               )}
@@ -430,7 +430,7 @@ export default function BuildDetailPage() {
                   <div key={r.id} className="rating-item">
                     <div className="rating-item__header">
                       <span className="rating-item__user">
-                        {r.user_display_name || 'Unknown User'}
+                        {r.creator_display_name || 'Unknown User'}
                       </span>
                       <StarDisplay score={r.score} />
                       <span className="rating-item__date">{formatDate(r.created_at)}</span>
@@ -454,7 +454,7 @@ export default function BuildDetailPage() {
                   <div key={comment.id} className="comment">
                     <div className="comment__header">
                       <span className="comment__author">
-                        {comment.user_display_name || 'Unknown User'}
+                        {comment.creator_display_name || 'Unknown User'}
                       </span>
                       <span className="comment__date">{timeAgo(comment.created_at)}</span>
                     </div>
@@ -491,7 +491,7 @@ export default function BuildDetailPage() {
                           <div key={reply.id} className="comment comment--reply">
                             <div className="comment__header">
                               <span className="comment__author">
-                                {reply.user_display_name || 'Unknown User'}
+                                {reply.creator_display_name || 'Unknown User'}
                               </span>
                               <span className="comment__date">{timeAgo(reply.created_at)}</span>
                             </div>
@@ -561,8 +561,8 @@ export default function BuildDetailPage() {
               <dl className="info-list">
                 <dt>Creator</dt>
                 <dd>
-                  {build.user_display_name ? (
-                    <Link to={`/profile/${build.user_id}`}>{build.user_display_name}</Link>
+                  {build.creator_display_name ? (
+                    <Link to={`/profile/${build.creator_id}`}>{build.creator_display_name}</Link>
                   ) : (
                     'Unknown'
                   )}

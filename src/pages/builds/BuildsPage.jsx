@@ -17,7 +17,7 @@ export default function BuildsPage() {
     if (!user) return;
     const load = async () => {
       try {
-        const results = await getBuilds({ user_id: user.id });
+        const results = await getBuilds({ creator_id: user.id });
         setAllBuilds(results);
       } catch (err) {
         setError(err.response?.data?.error || err.message);

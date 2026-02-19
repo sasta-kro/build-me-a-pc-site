@@ -113,7 +113,7 @@ export default function AdminPartEditPage() {
           if (part.specifications) {
             const existingSpecs = {};
             const cat = cats.find((c) => c.id === part.category_id);
-            const slug = cat ? cat.slug : '';
+            const slug = cat ? cat.category_name?.toLowerCase().replace(/\s+/g, '-') : '';
             const fields = SPEC_FIELDS[slug] || [];
 
             for (const field of fields) {
@@ -137,7 +137,7 @@ export default function AdminPartEditPage() {
   }, [id, getCategories, getItemById]);
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
-  const categorySlug = selectedCategory ? selectedCategory.slug : '';
+  const categorySlug = selectedCategory ? selectedCategory.category_name?.toLowerCase().replace(/\s+/g, '-') : '';
   const specFields = SPEC_FIELDS[categorySlug] || [];
 
   const handleSpecChange = (key, value) => {
@@ -306,7 +306,7 @@ export default function AdminPartEditPage() {
             <option value="">-- Select Category --</option>
             {categories.map((cat) => (
               <option key={cat.id} value={cat.id}>
-                {cat.name}
+                {cat.category_name}
               </option>
             ))}
           </select>

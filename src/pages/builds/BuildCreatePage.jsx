@@ -53,11 +53,12 @@ export default function BuildCreatePage() {
   const selectedPartObjects = useMemo(() => {
     const map = {};
     categories.forEach((cat) => {
-      const partId = selectedParts[cat.slug];
+      const slug = cat.category_name?.toLowerCase().replace(/\s+/g, '-') || '';
+      const partId = selectedParts[slug];
       if (partId) {
         const parts = partsByCategory[cat.id] || [];
         const part = parts.find((p) => p.id === partId);
-        if (part) map[cat.slug] = part;
+        if (part) map[slug] = part;
       }
     });
     return map;
@@ -109,7 +110,6 @@ export default function BuildCreatePage() {
 
     try {
       const buildData = {
-        user_id: user.id,
         title: title.trim(),
         description: description.trim(),
         purpose: purpose.trim(),
@@ -129,7 +129,6 @@ export default function BuildCreatePage() {
       if (isRequestMode) {
         await createItem('build_requests', {
           build_id: build.id,
-          user_id: user.id,
           budget: Number(budget) || 0,
           purpose: purpose.trim() || null,
           notes: requestNotes.trim() || null,
@@ -243,19 +242,20 @@ export default function BuildCreatePage() {
             <hr />
 
             {categories.map((cat) => {
+              const slug = cat.category_name?.toLowerCase().replace(/\s+/g, '-') || '';
               const parts = partsByCategory[cat.id] || [];
-              const selectedId = selectedParts[cat.slug] || '';
+              const selectedId = selectedParts[slug] || '';
               const selectedPart = parts.find((p) => p.id === selectedId);
 
               return (
                 <div className="part-category" key={cat.id}>
-                  <label className="part-category__label">{cat.name}</label>
+                  <label className="part-category__label">{cat.category_name}</label>
                   <select
                     className="form-select part-category__select"
                     value={selectedId}
-                    onChange={(e) => handlePartSelect(cat.slug, e.target.value)}
+                    onChange={(e) => handlePartSelect(slug, e.target.value)}
                   >
-                    <option value="">-- Select {cat.name} --</option>
+                    <option value="">-- Select {cat.category_name} --</option>
                     {parts.map((part) => (
                       <option key={part.id} value={part.id}>
                         {part.name} - {formatCurrency(part.price)}
@@ -281,14 +281,15 @@ export default function BuildCreatePage() {
             <h2>Build Summary</h2>
 
             {categories.map((cat) => {
-              const partId = selectedParts[cat.slug];
+              const slug = cat.category_name?.toLowerCase().replace(/\s+/g, '-') || '';
+              const partId = selectedParts[slug];
               const parts = partsByCategory[cat.id] || [];
               const part = parts.find((p) => p.id === partId);
               if (!part) return null;
 
               return (
                 <div className="summary-panel__item" key={cat.id}>
-                  <span>{cat.name}:</span>
+                  <span>{cat.category_name}:</span>
                   <span>
                     {part.name} — {formatCurrency(part.price)}
                   </span>

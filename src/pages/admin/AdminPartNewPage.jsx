@@ -107,7 +107,7 @@ export default function AdminPartNewPage() {
   }, [getCategories]);
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
-  const categorySlug = selectedCategory ? selectedCategory.slug : '';
+  const categorySlug = selectedCategory ? selectedCategory.category_name?.toLowerCase().replace(/\s+/g, '-') : '';
   const specFields = SPEC_FIELDS[categorySlug] || [];
 
   const handleSpecChange = (key, value) => {
@@ -269,7 +269,7 @@ export default function AdminPartNewPage() {
             <option value="">-- Select Category --</option>
             {categories.map((cat) => (
               <option key={cat.id} value={cat.id}>
-                {cat.name}
+                {cat.category_name}
               </option>
             ))}
           </select>

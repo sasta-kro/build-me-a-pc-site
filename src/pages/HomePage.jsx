@@ -77,7 +77,7 @@ export default function HomePage() {
                   <div className="card__price">{formatCurrency(build.total_price || 0)}</div>
                   <div className="card__meta">
                     <span className="card__creator">
-                      by {build.user_display_name || 'Unknown'}
+                      by {build.creator_display_name || 'Unknown'}
                     </span>
                   </div>
                 </div>

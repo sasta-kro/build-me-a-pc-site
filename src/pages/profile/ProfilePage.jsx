@@ -22,7 +22,7 @@ export default function ProfilePage() {
         setProfileUser(foundUser);
 
         if (foundUser) {
-          const userBuilds = await getBuilds({ user_id: foundUser.id, status: 'published' });
+          const userBuilds = await getBuilds({ creator_id: foundUser.id, status: 'published' });
           setBuilds(userBuilds);
 
           if (foundUser.role === 'builder' || foundUser.role === 'admin') {
@@ -131,12 +131,6 @@ export default function ProfilePage() {
                   <strong>Completed Builds:</strong>{' '}
                   {builderProfile.completed_builds || 0}
                 </p>
-                {builderProfile.avg_response_time_hrs != null && (
-                  <p>
-                    <strong>Avg Response Time:</strong>{' '}
-                    {builderProfile.avg_response_time_hrs} hr{builderProfile.avg_response_time_hrs !== 1 ? 's' : ''}
-                  </p>
-                )}
               </div>
             </div>
             {(builderProfile.website || builderProfile.portfolio_url) && (

@@ -34,7 +34,7 @@ export default function BuildEditPage() {
         }
 
         // Only the build owner can edit
-        if (user?.id !== build.user_id) {
+        if (user?.id !== build.creator_id) {
           navigate(`/builds/${id}`, { replace: true });
           return;
         }
@@ -61,7 +61,8 @@ export default function BuildEditPage() {
         const partsSelection = {};
         existingBuildParts.forEach((bp) => {
           if (bp.category) {
-            partsSelection[bp.category.slug] = bp.part_id;
+            const slug = bp.category.name?.toLowerCase().replace(/\s+/g, '-') || '';
+            partsSelection[slug] = bp.part_id;
           }
         });
         setSelectedParts(partsSelection);
@@ -78,11 +79,12 @@ export default function BuildEditPage() {
   const selectedPartObjects = useMemo(() => {
     const map = {};
     categories.forEach((cat) => {
-      const partId = selectedParts[cat.slug];
+      const slug = cat.category_name?.toLowerCase().replace(/\s+/g, '-') || '';
+      const partId = selectedParts[slug];
       if (partId) {
         const parts = partsByCategory[cat.id] || [];
         const part = parts.find((p) => p.id === partId);
-        if (part) map[cat.slug] = part;
+        if (part) map[slug] = part;
       }
     });
     return map;
@@ -134,7 +136,6 @@ export default function BuildEditPage() {
     try {
       const buildData = {
         id,
-        user_id: user.id,
         title: title.trim(),
         description: description.trim(),
         purpose: purpose.trim(),
@@ -214,19 +215,20 @@ export default function BuildEditPage() {
             <hr />
 
             {categories.map((cat) => {
+              const slug = cat.category_name?.toLowerCase().replace(/\s+/g, '-') || '';
               const parts = partsByCategory[cat.id] || [];
-              const selectedId = selectedParts[cat.slug] || '';
+              const selectedId = selectedParts[slug] || '';
               const selectedPart = parts.find((p) => p.id === selectedId);
 
               return (
                 <div className="part-category" key={cat.id}>
-                  <label className="part-category__label">{cat.name}</label>
+                  <label className="part-category__label">{cat.category_name}</label>
                   <select
                     className="form-select part-category__select"
                     value={selectedId}
-                    onChange={(e) => handlePartSelect(cat.slug, e.target.value)}
+                    onChange={(e) => handlePartSelect(slug, e.target.value)}
                   >
-                    <option value="">-- Select {cat.name} --</option>
+                    <option value="">-- Select {cat.category_name} --</option>
                     {parts.map((part) => (
                       <option key={part.id} value={part.id}>
                         {part.name} - {formatCurrency(part.price)}
@@ -247,14 +249,15 @@ export default function BuildEditPage() {
             <h2>Build Summary</h2>
 
             {categories.map((cat) => {
-              const partId = selectedParts[cat.slug];
+              const slug = cat.category_name?.toLowerCase().replace(/\s+/g, '-') || '';
+              const partId = selectedParts[slug];
               const parts = partsByCategory[cat.id] || [];
               const part = parts.find((p) => p.id === partId);
               if (!part) return null;
 
               return (
                 <div className="summary-panel__item" key={cat.id}>
-                  <span>{cat.name}:</span>
+                  <span>{cat.category_name}:</span>
                   <span>
                     {part.name} — {formatCurrency(part.price)}
                   </span>

@@ -119,7 +119,7 @@ export default function ShowcasePage() {
 
                 <div className="card__meta" style={{ marginTop: '0.75rem' }}>
                   <span className="card__creator">
-                    by {build.user_display_name || 'Unknown Builder'}
+                    by {build.creator_display_name || 'Unknown Builder'}
                   </span>
                 </div>
 

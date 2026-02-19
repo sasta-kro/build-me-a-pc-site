@@ -28,7 +28,7 @@ export default function BuilderDashboardPage() {
       try {
         const [builderOffers, showcase, builderInquiries, builderProfile] = await Promise.all([
           getOffers({ builder_id: user.id }),
-          getBuilds({ user_id: user.id, build_type: 'showcase' }),
+          getBuilds({ creator_id: user.id, build_type: 'showcase' }),
           getInquiries({ builder_id: user.id }),
           getBuilderProfile(user.id),
         ]);
