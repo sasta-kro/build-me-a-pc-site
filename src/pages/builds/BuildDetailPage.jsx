@@ -320,14 +320,15 @@ export default function BuildDetailPage() {
     <div className="page">
       <div className="build-detail">
         <div className="build-detail__main">
+
           {/* Header */}
-          <div className="build-detail__header">
+          <div className="card" style={{marginBottom: '2rem'}}>
             <h1>{build.title}</h1>
             {build.purpose && (
               <span className="badge badge--secondary">{build.purpose}</span>
             )}
             <p className="build-detail__author">
-              by{' '}
+              By{' '}
               {build.creator_display_name ? (
                 <Link to={`/profile/${build.creator_id}`}>{build.creator_display_name}</Link>
               ) : (
@@ -383,8 +384,12 @@ export default function BuildDetailPage() {
           </div>
 
           {/* Compatibility */}
-          {compatIssues.length > 0 && (
-            <div className="build-detail__compatibility">
+          {compatIssues.length === 0 ? (
+              <div className="alert alert--success" style={{marginBottom: '1rem', marginTop: '1rem'}}>
+                <p>All parts are compatible!</p>
+              </div>
+          ) : (
+              <div className="card" style={{marginBottom: '2rem'}}>
               <h2>Compatibility Check</h2>
               {errors.length > 0 && (
                 <div className="compat-issues compat-issues--error">
@@ -408,16 +413,9 @@ export default function BuildDetailPage() {
               )}
             </div>
           )}
-          {compatIssues.length === 0 && parts.length > 0 && (
-            <div className="build-detail__compatibility">
-              <div className="compat-issues compat-issues--success">
-                <p>All parts are compatible!</p>
-              </div>
-            </div>
-          )}
 
           {/* Social Actions */}
-          <div className="social-actions">
+          <div className="social-actions card" style={{marginBottom: '2rem'}}>
             {isAuthenticated && (
               <button
                 className={hasLiked ? 'like-btn like-btn--liked' : 'like-btn'}
@@ -478,30 +476,44 @@ export default function BuildDetailPage() {
           )}
 
           {/* Ratings List */}
-          {ratings.length > 0 && (
-            <div className="build-detail__ratings">
-              <h2>Reviews ({ratings.length})</h2>
-              <div className="ratings-list">
-                {ratings.map(r => (
-                  <div key={r.id} className="rating-item">
-                    <div className="rating-item__header">
-                      <span className="rating-item__user">
-                        {r.creator_display_name || 'Unknown User'}
+          {ratings.length === 0 ? (
+              <p className="text--muted">No ratings yet.</p>
+          ) : (
+              <div className="card" style={{marginBottom: '2rem'}}>
+              <div className="card__title">
+                <h2>Ratings ({ratings.length})</h2>
+              </div>
+              <div className="card__body">
+                <div className="rating-list">
+                  {ratings.map((rating) => (
+                      <div key={rating.id} style={{ borderBottom: '1px solid var(--color-border, #eee)', padding: '0.75rem 0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <strong>
+                            {rating.user_id ? (
+                                <Link to={`/profile/${rating.user_id}`}>
+                                  {rating.creator_display_name || 'Unknown User'}
+                                </Link>
+                            ) : (
+                                'Unknown User'
+                            )}
+                          </strong>
+                          <span>
+                          {'★'.repeat(rating.score)}{'☆'.repeat(5 - rating.score)}
+                        </span>
+                        </div>
+                        {rating.review_text && <p style={{ marginTop: '0.25rem' }}>{rating.review_text}</p>}
+                        <span className="text--muted" style={{ fontSize: '0.85rem' }}>
+                        {formatDate(rating.created_at)}
                       </span>
-                      <StarDisplay score={r.score} />
-                      <span className="rating-item__date">{formatDate(r.created_at)}</span>
-                    </div>
-                    {r.review_text && (
-                      <p className="rating-item__review">{r.review_text}</p>
-                    )}
-                  </div>
-                ))}
+                      </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
           {/* Comments Section */}
-          <div className="build-detail__comments">
+          <div className="build-detail__comments card">
             <h2>Comments ({comments.length})</h2>
 
             {commentTree.length > 0 ? (
@@ -521,56 +533,47 @@ export default function BuildDetailPage() {
                 ))}
               </div>
             ) : (
-              <p className="comments-empty">No comments yet. Be the first to share your thoughts!</p>
-            )}
-
-            {/* New comment form */}
-            {isAuthenticated && (
-              <form className="comment-form" onSubmit={handleSubmitComment}>
-                <h3>Add a Comment</h3>
-                <textarea
-                  className="form__textarea"
-                  placeholder="Share your thoughts on this build..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  rows={3}
-                />
-                <button type="submit" className="btn btn--primary" disabled={!newComment.trim()}>
-                  Post Comment
-                </button>
-              </form>
-            )}
-            {!isAuthenticated && (
-              <p className="comments-login">
-                <Link to="/login">Log in</Link> to leave a comment or rating.
-              </p>
+                <p className="comments-empty">No comments yet. Be the first to share your thoughts!</p>
             )}
           </div>
         </div>
 
         {/* Sidebar */}
         <div className="build-detail__sidebar">
-          <div className="card">
+
+          {/* Build info */}
+          <div className="card" style={{marginBottom: '2rem'}}>
             <div className="card__body">
-              <h3 className="card__title">Build Info</h3>
-              <dl className="info-list">
-                <dt>Creator</dt>
-                <dd>
-                  {build.creator_display_name ? (
-                    <Link to={`/profile/${build.creator_id}`}>{build.creator_display_name}</Link>
-                  ) : (
-                    'Unknown'
-                  )}
-                </dd>
-                <dt>Created</dt>
-                <dd>{formatDate(build.created_at)}</dd>
-                <dt>Status</dt>
-                <dd>
-                  <span className="badge">{build.status}</span>
-                </dd>
-                <dt>Total Price</dt>
-                <dd>{formatCurrency(totalPrice)}</dd>
-              </dl>
+              <h3 className="card__header">Build Info</h3>
+              <div className="card__body">
+
+                <dl className="build-detail__info">
+                  <dt style={{fontWeight: 'bold'}}>Creator</dt>
+                  <dd style={{fontWeight: 'bold'}}>
+                    {build.creator_display_name ?
+                        ( <Link to={`/profile/${build.creator_id}`}>{build.creator_display_name}</Link> )
+                        :
+                        ( 'Unknown' )
+                    }
+                  </dd>
+                </dl>
+
+                <dl className="build-detail__info">
+                  <dt>Created</dt>
+                  <dd>{formatDate(build.created_at)}</dd>
+                </dl>
+
+                <dl className="build-detail__info">
+                  <dt>Status</dt>
+                  <dd>
+                    <span className="badge--success badge">{build.status}</span>
+                  </dd>
+                </dl>
+                <dl className="build-detail__info">
+                  <dt>Total Price</dt>
+                  <dd>{formatCurrency(totalPrice)}</dd>
+                </dl>
+              </div>
 
               {isOwner && (
                 <div className="card__actions">
@@ -620,7 +623,7 @@ export default function BuildDetailPage() {
 
           {/* Request Form */}
           {showRequestForm && (
-            <div className="card">
+            <div className="card" style={{marginBottom: '2rem'}}>
               <div className="card__body">
                 <h3 className="card__title">Post Request</h3>
                 <form onSubmit={handleCreateRequest}>
