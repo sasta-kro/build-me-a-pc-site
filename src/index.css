@@ -703,8 +703,7 @@ img { max-width: 100%; display: block; }
   align-items: start;
 }
 
-.build-detail__main {
-}
+.build-detail__main { }
 
 .build-detail__sidebar {
   position: sticky;
@@ -714,6 +713,13 @@ img { max-width: 100%; display: block; }
 .build-detail__author {
   font-size: 1rem;
   font-weight: 600;
+}
+
+.build-detail__info {
+  display: flex;
+  justify-items: start;
+  justify-content: space-between;
+  /*outline: #16a34a solid 1px;*/
 }
 
 .parts-table {

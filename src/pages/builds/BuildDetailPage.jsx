@@ -539,27 +539,40 @@ export default function BuildDetailPage() {
 
         {/* Sidebar */}
         <div className="build-detail__sidebar">
+
+          {/* Build info */}
           <div className="card" style={{marginBottom: '2rem'}}>
             <div className="card__body">
-              <h3 className="card__title">Build Info</h3>
-              <dl className="info-list">
-                <dt>Creator</dt>
-                <dd>
-                  {build.creator_display_name ? (
-                    <Link to={`/profile/${build.creator_id}`}>{build.creator_display_name}</Link>
-                  ) : (
-                    'Unknown'
-                  )}
-                </dd>
-                <dt>Created</dt>
-                <dd>{formatDate(build.created_at)}</dd>
-                <dt>Status</dt>
-                <dd>
-                  <span className="badge">{build.status}</span>
-                </dd>
-                <dt>Total Price</dt>
-                <dd>{formatCurrency(totalPrice)}</dd>
-              </dl>
+              <h3 className="card__header">Build Info</h3>
+              <div className="card__body">
+
+                <dl className="build-detail__info">
+                  <dt style={{fontWeight: 'bold'}}>Creator</dt>
+                  <dd style={{fontWeight: 'bold'}}>
+                    {build.creator_display_name ?
+                        ( <Link to={`/profile/${build.creator_id}`}>{build.creator_display_name}</Link> )
+                        :
+                        ( 'Unknown' )
+                    }
+                  </dd>
+                </dl>
+
+                <dl className="build-detail__info">
+                  <dt>Created</dt>
+                  <dd>{formatDate(build.created_at)}</dd>
+                </dl>
+
+                <dl className="build-detail__info">
+                  <dt>Status</dt>
+                  <dd>
+                    <span className="badge--success badge">{build.status}</span>
+                  </dd>
+                </dl>
+                <dl className="build-detail__info">
+                  <dt>Total Price</dt>
+                  <dd>{formatCurrency(totalPrice)}</dd>
+                </dl>
+              </div>
 
               {isOwner && (
                 <div className="card__actions">
