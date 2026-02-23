@@ -108,7 +108,6 @@ export default function BuilderApplyPage() {
         status: 'pending',
         admin_notes: null,
         reviewed_by: null,
-        reviewed_at: null,
       });
 
       setSubmitted(true);

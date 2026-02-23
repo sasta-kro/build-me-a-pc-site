@@ -276,8 +276,18 @@ export function DataProvider({ children }) {
     return data;
   }, []);
 
+  const createCompatibilityRule = useCallback(async (ruleData) => {
+    const { data } = await api.post('/compatibility/rules', ruleData);
+    return data;
+  }, []);
+
   const updateCompatibilityRule = useCallback(async (ruleId, updates) => {
     const { data } = await api.put(`/compatibility/rules/${ruleId}`, updates);
+    return data;
+  }, []);
+
+  const deleteCompatibilityRule = useCallback(async (ruleId) => {
+    const { data } = await api.delete(`/compatibility/rules/${ruleId}`);
     return data;
   }, []);
 
@@ -308,7 +318,9 @@ export function DataProvider({ children }) {
     // Compatibility
     checkCompatibility,
     getCompatibilityRules,
+    createCompatibilityRule,
     updateCompatibilityRule,
+    deleteCompatibilityRule,
     // Stats
     getStats,
   };

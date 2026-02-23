@@ -1,11 +1,16 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { formatCurrency } from '../../utils/helpers';
 
+const REQUIRED_PARTS = ['cpu', 'motherboard', 'ram', 'psu', 'case'];
+
+function getMissingParts(selectedParts) {
+  const present = Object.keys(selectedParts).filter(k => selectedParts[k]);
+  return REQUIRED_PARTS.filter(p => !present.includes(p));
+}
+
 export default function BuildCreatePage() {
-  const { user } = useAuth();
   const { getCategories, getParts, saveBuild, createItem, checkCompatibility } = useData();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -75,10 +80,15 @@ export default function BuildCreatePage() {
     const run = async () => {
       try {
         const issues = await checkCompatibility(selectedPartObjects);
-        if (!cancelled) setCompatibilityIssues(issues);
-      } catch {
-        // Silently ignore compat check failures — non-critical
-        if (!cancelled) setCompatibilityIssues([]);
+        if (!cancelled) setCompatibilityIssues(issues || []);
+      } catch (err) {
+        console.error('Compatibility check failed:', err);
+        if (!cancelled) {
+          setCompatibilityIssues([{
+            severity: 'warning',
+            message: 'Could not verify compatibility. Please check your connection.',
+          }]);
+        }
       }
     };
     run();
@@ -87,10 +97,13 @@ export default function BuildCreatePage() {
 
   const hasErrors = compatibilityIssues.some((i) => i.severity === 'error');
 
+  const missingParts = getMissingParts(selectedParts);
+  const canSave = title.trim() && missingParts.length === 0 && !hasErrors;
+
   // Calculate total price
   const totalPrice = useMemo(() => {
     return Object.values(selectedPartObjects).reduce(
-      (sum, part) => sum + (part.price || 0),
+      (sum, part) => sum + (Number(part.price) || 0),
       0
     );
   }, [selectedPartObjects]);
@@ -106,7 +119,30 @@ export default function BuildCreatePage() {
     e.preventDefault();
 
     if (!title.trim() || saving) return;
+
+    const missingParts = getMissingParts(selectedParts);
+    if (missingParts.length > 0) {
+      setError(`Missing required parts: ${missingParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(', ')}`);
+      return;
+    }
+
+    if (status === 'published') {
+      try {
+        const issues = await checkCompatibility(selectedPartObjects);
+        const errors = (issues || []).filter(i => i.severity === 'error');
+        if (errors.length > 0) {
+          setCompatibilityIssues(issues);
+          setError('Cannot publish build with compatibility errors. Please fix the issues above.');
+          return;
+        }
+      } catch {
+        setError('Could not verify compatibility. Please check your connection and try again.');
+        return;
+      }
+    }
+
     setSaving(true);
+    setError(null);
 
     try {
       const buildData = {
@@ -318,13 +354,23 @@ export default function BuildCreatePage() {
               </div>
             )}
 
+            {missingParts.length > 0 && (
+              <div className="compat-panel">
+                <h3>Required Parts</h3>
+                <div className="compat-alert compat-alert--error">
+                  <span className="compat-alert__icon">{'\u2718'}</span>
+                  Missing: {missingParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(', ')}
+                </div>
+              </div>
+            )}
+
             <div className="summary-panel__actions">
               {isRequestMode ? (
                 <button
                   type="button"
                   className="btn btn--primary btn--block"
                   onClick={(e) => handleSave(e, 'published')}
-                  disabled={!title.trim() || hasErrors || saving}
+                  disabled={!canSave || hasErrors || saving}
                 >
                   {saving ? 'Submitting...' : 'Submit Request'}
                 </button>
@@ -334,7 +380,7 @@ export default function BuildCreatePage() {
                     type="button"
                     className="btn btn--outline btn--block"
                     onClick={(e) => handleSave(e, 'draft')}
-                    disabled={!title.trim() || saving}
+                    disabled={!canSave || saving}
                   >
                     {saving ? 'Saving...' : 'Save as Draft'}
                   </button>
@@ -342,7 +388,7 @@ export default function BuildCreatePage() {
                     type="button"
                     className="btn btn--primary btn--block"
                     onClick={(e) => handleSave(e, 'published')}
-                    disabled={!title.trim() || hasErrors || saving}
+                    disabled={!canSave || hasErrors || saving}
                   >
                     {saving ? 'Publishing...' : 'Publish Build'}
                   </button>
