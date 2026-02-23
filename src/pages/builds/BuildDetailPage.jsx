@@ -512,7 +512,7 @@ export default function BuildDetailPage() {
           )}
 
           {/* Comments Section */}
-          <div className="build-detail__comments">
+          <div className="build-detail__comments card">
             <h2>Comments ({comments.length})</h2>
 
             {commentTree.length > 0 ? (
@@ -533,28 +533,6 @@ export default function BuildDetailPage() {
                 </div>
             ) : (
                 <p className="comments-empty">No comments yet. Be the first to share your thoughts!</p>
-            )}
-
-            {/* New comment form */}
-            {isAuthenticated && (
-                <form className="comment-form" onSubmit={handleSubmitComment}>
-                  <h3>Add a Comment</h3>
-                  <textarea
-                      className="form__textarea"
-                      placeholder="Share your thoughts on this build..."
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      rows={3}
-                  />
-                  <button type="submit" className="btn btn--primary" disabled={!newComment.trim()}>
-                    Post Comment
-                  </button>
-                </form>
-            )}
-            {!isAuthenticated && (
-                <p className="comments-login">
-                  <Link to="/login">Log in</Link> to leave a comment or rating.
-                </p>
             )}
           </div>
         </div>
