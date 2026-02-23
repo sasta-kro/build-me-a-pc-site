@@ -21,6 +21,7 @@ export default function AdminPartsPage() {
         getCategories(),
       ]);
       setParts(partsData);
+      console.log(catsData)
       setCategories(catsData);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -47,7 +48,7 @@ export default function AdminPartsPage() {
 
   const getCategoryName = (categoryId) => {
     const cat = categories.find((c) => c.id === categoryId);
-    return cat ? cat.name : 'Unknown';
+    return cat ? cat.category_name : 'Unknown';
   };
 
   const filteredParts = parts.filter((part) => {
@@ -88,7 +89,7 @@ export default function AdminPartsPage() {
           <option value="">All Categories</option>
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
-              {cat.name}
+              {cat.category_name}
             </option>
           ))}
         </select>

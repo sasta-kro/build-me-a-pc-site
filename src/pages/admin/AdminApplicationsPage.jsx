@@ -145,9 +145,6 @@ export default function AdminApplicationsPage() {
                     {app.admin_notes && (
                       <p><strong>Admin Notes:</strong> {app.admin_notes}</p>
                     )}
-                    {app.reviewed_at && (
-                      <p><strong>Reviewed:</strong> {formatDate(app.reviewed_at)}</p>
-                    )}
                   </div>
                 )}
               </div>

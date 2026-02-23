@@ -40,6 +40,62 @@ function StarDisplay({ score }) {
   return <span className="star-display">{stars}</span>;
 }
 
+// Recursive comment renderer component
+function CommentItem({ comment, isAuthenticated, replyTo, setReplyTo, replyText, setReplyText, handleSubmitReply, isReply = false }) {
+  return (
+    <div className={`comment ${isReply ? 'comment--reply' : ''}`}>
+      <div className="comment__header">
+        <span className="comment__author">
+          {comment.creator_display_name || 'Unknown User'}
+        </span>
+        <span className="comment__date">{timeAgo(comment.created_at)}</span>
+      </div>
+      <p className="comment__content">{comment.content}</p>
+      {isAuthenticated && (
+        <button
+          className="comment__reply-btn"
+          onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
+        >
+          {replyTo === comment.id ? 'Cancel' : 'Reply'}
+        </button>
+      )}
+
+      {replyTo === comment.id && (
+        <form className="comment-form comment-form--reply" onSubmit={handleSubmitReply}>
+          <textarea
+            className="form__textarea"
+            placeholder="Write a reply..."
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            rows={2}
+          />
+          <button type="submit" className="btn btn--primary btn--sm" disabled={!replyText.trim()}>
+            Post Reply
+          </button>
+        </form>
+      )}
+
+      {comment.replies.length > 0 && (
+        <div className="comment__replies">
+          {comment.replies.map(reply => (
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              isAuthenticated={isAuthenticated}
+              replyTo={replyTo}
+              setReplyTo={setReplyTo}
+              replyText={replyText}
+              setReplyText={setReplyText}
+              handleSubmitReply={handleSubmitReply}
+              isReply={true}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function BuildDetailPage() {
   const { id } = useParams();
   const {
@@ -451,78 +507,17 @@ export default function BuildDetailPage() {
             {commentTree.length > 0 ? (
               <div className="comments-list">
                 {commentTree.map(comment => (
-                  <div key={comment.id} className="comment">
-                    <div className="comment__header">
-                      <span className="comment__author">
-                        {comment.creator_display_name || 'Unknown User'}
-                      </span>
-                      <span className="comment__date">{timeAgo(comment.created_at)}</span>
-                    </div>
-                    <p className="comment__content">{comment.content}</p>
-                    {isAuthenticated && (
-                      <button
-                        className="comment__reply-btn"
-                        onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
-                      >
-                        {replyTo === comment.id ? 'Cancel' : 'Reply'}
-                      </button>
-                    )}
-
-                    {/* Reply form */}
-                    {replyTo === comment.id && (
-                      <form className="comment-form comment-form--reply" onSubmit={handleSubmitReply}>
-                        <textarea
-                          className="form__textarea"
-                          placeholder="Write a reply..."
-                          value={replyText}
-                          onChange={(e) => setReplyText(e.target.value)}
-                          rows={2}
-                        />
-                        <button type="submit" className="btn btn--primary btn--sm" disabled={!replyText.trim()}>
-                          Post Reply
-                        </button>
-                      </form>
-                    )}
-
-                    {/* Nested replies */}
-                    {comment.replies.length > 0 && (
-                      <div className="comment__replies">
-                        {comment.replies.map(reply => (
-                          <div key={reply.id} className="comment comment--reply">
-                            <div className="comment__header">
-                              <span className="comment__author">
-                                {reply.creator_display_name || 'Unknown User'}
-                              </span>
-                              <span className="comment__date">{timeAgo(reply.created_at)}</span>
-                            </div>
-                            <p className="comment__content">{reply.content}</p>
-                            {isAuthenticated && (
-                              <button
-                                className="comment__reply-btn"
-                                onClick={() => setReplyTo(replyTo === reply.id ? null : reply.id)}
-                              >
-                                {replyTo === reply.id ? 'Cancel' : 'Reply'}
-                              </button>
-                            )}
-                            {replyTo === reply.id && (
-                              <form className="comment-form comment-form--reply" onSubmit={handleSubmitReply}>
-                                <textarea
-                                  className="form__textarea"
-                                  placeholder="Write a reply..."
-                                  value={replyText}
-                                  onChange={(e) => setReplyText(e.target.value)}
-                                  rows={2}
-                                />
-                                <button type="submit" className="btn btn--primary btn--sm" disabled={!replyText.trim()}>
-                                  Post Reply
-                                </button>
-                              </form>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <CommentItem
+                    key={comment.id}
+                    comment={comment}
+                    isAuthenticated={isAuthenticated}
+                    replyTo={replyTo}
+                    setReplyTo={setReplyTo}
+                    replyText={replyText}
+                    setReplyText={setReplyText}
+                    handleSubmitReply={handleSubmitReply}
+                    isReply={false}
+                  />
                 ))}
               </div>
             ) : (

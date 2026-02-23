@@ -40,6 +40,8 @@ export default function ShowcaseDetailPage() {
 
   // Comment form state
   const [commentText, setCommentText] = useState('');
+  const [replyTo, setReplyTo] = useState(null);
+  const [replyText, setReplyText] = useState('');
 
   const loadData = async () => {
     try {
@@ -152,6 +154,22 @@ export default function ShowcaseDetailPage() {
     }
   };
 
+  const handleSubmitReply = async (e) => {
+    e.preventDefault();
+    if (!isAuthenticated || !replyText.trim() || !replyTo) return;
+    try {
+      await addComment(build.id, {
+        content: replyText.trim(),
+        parent_comment_id: replyTo,
+      });
+      setReplyTo(null);
+      setReplyText('');
+      await loadData();
+    } catch (err) {
+      setError(err.response?.data?.error || err.message);
+    }
+  };
+
   const handleSubmitInquiry = async (e) => {
     e.preventDefault();
     if (!isAuthenticated || !inquiryMessage.trim()) return;
@@ -169,8 +187,88 @@ export default function ShowcaseDetailPage() {
   };
 
   // Build threaded comment tree
-  const topLevelComments = comments.filter(c => !c.parent_comment_id);
-  const getReplies = (parentId) => comments.filter(c => c.parent_comment_id === parentId);
+  function buildCommentTree(comments) {
+    const map = {};
+    const roots = [];
+
+    comments.forEach(c => {
+      map[c.id] = { ...c, replies: [] };
+    });
+
+    comments.forEach(c => {
+      if (c.parent_comment_id && map[c.parent_comment_id]) {
+        map[c.parent_comment_id].replies.push(map[c.id]);
+      } else {
+        roots.push(map[c.id]);
+      }
+    });
+
+    return roots;
+  }
+
+  const commentTree = buildCommentTree(comments);
+
+  // Recursive comment renderer
+  const renderComment = (comment, depth = 0) => {
+    const isReply = depth > 0;
+    return (
+      <div
+        key={comment.id}
+        style={{
+          borderBottom: isReply ? 'none' : '1px solid var(--color-border, #eee)',
+          padding: isReply ? '0.5rem 0' : '0.75rem 0',
+          marginLeft: isReply ? '1.5rem' : '0',
+          borderLeft: isReply ? '2px solid var(--color-border, #ddd)' : 'none',
+          paddingLeft: isReply ? '1rem' : '0',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <strong>
+            {comment.user_id ? (
+              <Link to={`/profile/${comment.user_id}`}>
+                {comment.creator_display_name || 'Unknown User'}
+              </Link>
+            ) : (
+              'Unknown User'
+            )}
+          </strong>
+          <span className="text--muted" style={{ fontSize: '0.85rem' }}>
+            {formatDate(comment.created_at)}
+          </span>
+        </div>
+        <p>{comment.content}</p>
+        {isAuthenticated && (
+          <button
+            className="comment__reply-btn"
+            onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
+            type="button"
+          >
+            {replyTo === comment.id ? 'Cancel' : 'Reply'}
+          </button>
+        )}
+        {replyTo === comment.id && (
+          <form onSubmit={handleSubmitReply} style={{ marginTop: '0.5rem' }}>
+            <textarea
+              className="form-input"
+              rows="2"
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              placeholder="Write a reply..."
+              style={{ marginBottom: '0.5rem' }}
+            />
+            <button type="submit" className="btn btn--primary btn--sm" disabled={!replyText.trim()}>
+              Post Reply
+            </button>
+          </form>
+        )}
+        {comment.replies.length > 0 && (
+          <div style={{ marginTop: '0.25rem' }}>
+            {comment.replies.map(reply => renderComment(reply, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="page">
@@ -398,53 +496,7 @@ export default function ShowcaseDetailPage() {
                 <p className="text--muted">No comments yet. Start the conversation.</p>
               ) : (
                 <div className="comment-list">
-                  {topLevelComments.map((comment) => {
-                    const replies = getReplies(comment.id);
-                    return (
-                      <div key={comment.id} style={{ borderBottom: '1px solid var(--color-border, #eee)', padding: '0.75rem 0' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <strong>
-                            {comment.user_id ? (
-                              <Link to={`/profile/${comment.user_id}`}>
-                                {comment.creator_display_name || 'Unknown User'}
-                              </Link>
-                            ) : (
-                              'Unknown User'
-                            )}
-                          </strong>
-                          <span className="text--muted" style={{ fontSize: '0.85rem' }}>
-                            {formatDate(comment.created_at)}
-                          </span>
-                        </div>
-                        <p>{comment.content}</p>
-
-                        {/* Replies */}
-                        {replies.length > 0 && (
-                          <div style={{ marginLeft: '1.5rem', borderLeft: '2px solid var(--color-border, #ddd)', paddingLeft: '1rem' }}>
-                            {replies.map((reply) => (
-                              <div key={reply.id} style={{ padding: '0.5rem 0' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <strong>
-                                    {reply.user_id ? (
-                                      <Link to={`/profile/${reply.user_id}`}>
-                                        {reply.creator_display_name || 'Unknown User'}
-                                      </Link>
-                                    ) : (
-                                      'Unknown User'
-                                    )}
-                                  </strong>
-                                  <span className="text--muted" style={{ fontSize: '0.85rem' }}>
-                                    {formatDate(reply.created_at)}
-                                  </span>
-                                </div>
-                                <p>{reply.content}</p>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {commentTree.map(comment => renderComment(comment))}
                 </div>
               )}
             </div>
