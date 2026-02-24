@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import {useParams, Link, Navigate, useNavigate} from 'react-router-dom';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDate, timeAgo, formatRating } from '../../utils/helpers';
@@ -98,6 +98,7 @@ function CommentItem({ comment, isAuthenticated, replyTo, setReplyTo, replyText,
 
 export default function BuildDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate()
   const {
     getItemById, getBuildParts, getRatings, getComments,
     isLiked, toggleLike, addRating, addComment, createItem,
@@ -238,14 +239,15 @@ export default function BuildDetailPage() {
     }
   }, [user, id, newScore, newReview, addRating, getRatings, getItemById]);
 
-    const handleDelete = async (buildId, buildName) => {
-        if (!window.confirm(`Are you sure you want to delete "${buildName}"?`)) return;
-        try {
-            await removeItem('builds', buildId);
-        } catch (err) {
-            setError(err.response?.data?.error || err.message);
-        }
-    };
+  const handleDelete = async (buildId, buildName) => {
+      if (!window.confirm(`Are you sure you want to delete "${buildName}"?`)) return;
+      try {
+          await removeItem('builds', buildId);
+          navigate('/builds')
+      } catch (err) {
+          setError(err.response?.data?.error || err.message);
+      }
+  };
 
   const handleCreateRequest = useCallback(async (e) => {
     e.preventDefault();
@@ -337,7 +339,7 @@ export default function BuildDetailPage() {
           </div>
 
           {/* Parts Table */}
-          <div className="build-detail__parts">
+          <div className="build-detail__parts" style={{marginBottom: '1rem'}}>
             <h2>Parts List</h2>
             <table className="parts-table">
               <thead>
@@ -380,8 +382,11 @@ export default function BuildDetailPage() {
 
           {/* Compatibility */}
           {compatIssues.length === 0 ? (
-              <div className="alert alert--success" style={{marginBottom: '1rem', marginTop: '1rem'}}>
-                <p>All parts are compatible!</p>
+              <div className="card" style={{marginBottom: '2rem'}}>
+                <h2>Compatibility Check</h2>
+                <div className="alert alert--success" style={{marginBottom: '1rem', marginTop: '1rem'}}>
+                  <p>All parts are compatible!</p>
+                </div>
               </div>
           ) : (
               <div className="card" style={{marginBottom: '2rem'}}>
@@ -391,17 +396,21 @@ export default function BuildDetailPage() {
                   <h3>Errors ({errors.length})</h3>
                   <ul>
                     {errors.map((issue, i) => (
-                      <li key={i}>{issue.message}</li>
+                      <li key={i}>
+                        {issue.message}
+                      </li>
                     ))}
                   </ul>
                 </div>
               )}
               {warnings.length > 0 && (
                 <div className="compat-issues compat-issues--warning">
-                  <h3>Warnings ({warnings.length})</h3>
+                  <h3 style={{marginBottom: '0.5rem'}}>Warnings ({warnings.length})</h3>
                   <ul>
                     {warnings.map((issue, i) => (
-                      <li key={i}>{issue.message}</li>
+                      <ul className="alert alert--warning" key={i}>
+                        {issue.message}
+                      </ul>
                     ))}
                   </ul>
                 </div>
@@ -409,7 +418,7 @@ export default function BuildDetailPage() {
             </div>
           )}
 
-          {/* Social Actions */}
+          {/* likes, avg rating */}
           <div className="social-actions card" style={{marginBottom: '2rem'}}>
             {isAuthenticated && (
               <button
@@ -471,41 +480,41 @@ export default function BuildDetailPage() {
           )}
 
           {/* Ratings List */}
-          {ratings.length === 0 ? (
-              <p className="text--muted">No ratings yet.</p>
-          ) : (
-              <div className="card" style={{marginBottom: '2rem'}}>
-              <div className="card__title">
-                <h2>Ratings ({ratings.length})</h2>
-              </div>
-              <div className="card__body">
-                <div className="rating-list">
-                  {ratings.map((rating) => (
-                      <div key={rating.id} style={{ borderBottom: '1px solid var(--color-border, #eee)', padding: '0.75rem 0' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <strong>
-                            {rating.user_id ? (
-                                <Link to={`/profile/${rating.user_id}`}>
-                                  {rating.creator_display_name || 'Unknown User'}
-                                </Link>
-                            ) : (
-                                'Unknown User'
-                            )}
-                          </strong>
-                          <span>
-                          {'★'.repeat(rating.score)}{'☆'.repeat(5 - rating.score)}
-                        </span>
-                        </div>
-                        {rating.review_text && <p style={{ marginTop: '0.25rem' }}>{rating.review_text}</p>}
-                        <span className="text--muted" style={{ fontSize: '0.85rem' }}>
-                        {formatDate(rating.created_at)}
-                      </span>
-                      </div>
-                  ))}
-                </div>
-              </div>
+          <div className="card" style={{marginBottom: '2rem'}}>
+            <div className="card__title">
+              <h2>Ratings ({ratings.length})</h2>
             </div>
-          )}
+            {ratings.length === 0 ? (
+                <p className="text-muted">No ratings yet.</p>
+            ) : (
+                <div className="card__body">
+                  <div className="rating-list">
+                    {ratings.map((rating) => (
+                        <div key={rating.id} style={{ borderBottom: '1px solid var(--color-border, #eee)', padding: '0.75rem 0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <strong>
+                              {rating.user_id ? (
+                                  <Link to={`/profile/${rating.user_id}`}>
+                                    {rating.creator_display_name || 'Unknown User'}
+                                  </Link>
+                              ) : (
+                                  'Unknown User'
+                              )}
+                            </strong>
+                            <span>
+                      {'★'.repeat(rating.score)}{'☆'.repeat(5 - rating.score)}
+                    </span>
+                          </div>
+                          {rating.review_text && <p style={{ marginTop: '0.25rem' }}>{rating.review_text}</p>}
+                          <span className="text--muted" style={{ fontSize: '0.85rem' }}>
+                    {formatDate(rating.created_at)}
+                  </span>
+                        </div>
+                    ))}
+                  </div>
+                </div>
+            )}
+        </div>
 
           {/* Comments Section */}
           <div className="build-detail__comments card">
