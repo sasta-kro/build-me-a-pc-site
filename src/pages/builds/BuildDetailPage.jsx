@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import {useParams, Link, Navigate, useNavigate} from 'react-router-dom';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDate, timeAgo, formatRating } from '../../utils/helpers';
@@ -98,11 +98,12 @@ function CommentItem({ comment, isAuthenticated, replyTo, setReplyTo, replyText,
 
 export default function BuildDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate()
   const {
     getItemById, getBuildParts, getRatings, getComments,
     isLiked, toggleLike, addRating, addComment, createItem,
     updateBuild, getBuilders, getRequests, getUserRating,
-    checkCompatibility,
+    checkCompatibility, removeItem
   } = useData();
   const { user, isAuthenticated, isBuilder } = useAuth();
 
@@ -123,7 +124,6 @@ export default function BuildDetailPage() {
   const [hasRated, setHasRated] = useState(false);
 
   // Comment form
-  const [newComment, setNewComment] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const [replyText, setReplyText] = useState('');
 
@@ -239,18 +239,15 @@ export default function BuildDetailPage() {
     }
   }, [user, id, newScore, newReview, addRating, getRatings, getItemById]);
 
-  const handleSubmitComment = useCallback(async (e) => {
-    e.preventDefault();
-    if (!user || !newComment.trim()) return;
-    try {
-      await addComment(id, { content: newComment.trim(), parent_id: null });
-      setNewComment('');
-      const updatedComments = await getComments(id);
-      setComments(updatedComments);
-    } catch (err) {
-      console.error('Failed to submit comment:', err);
-    }
-  }, [user, id, newComment, addComment, getComments]);
+  const handleDelete = async (buildId, buildName) => {
+      if (!window.confirm(`Are you sure you want to delete "${buildName}"?`)) return;
+      try {
+          await removeItem('builds', buildId);
+          navigate('/builds')
+      } catch (err) {
+          setError(err.response?.data?.error || err.message);
+      }
+  };
 
   const handleCreateRequest = useCallback(async (e) => {
     e.preventDefault();
@@ -309,7 +306,6 @@ export default function BuildDetailPage() {
   }
 
   const isOwner = user && user.id === build.creator_id;
-  const totalPrice = parts.reduce((sum, bp) => sum + (bp.part ? bp.part.price : 0), 0);
   const commentTree = buildCommentTree(comments);
   const errors = compatIssues.filter(i => i.severity === 'error');
   const warnings = compatIssues.filter(i => i.severity === 'warning');
@@ -320,14 +316,15 @@ export default function BuildDetailPage() {
     <div className="page">
       <div className="build-detail">
         <div className="build-detail__main">
+
           {/* Header */}
-          <div className="build-detail__header">
+          <div className="card" style={{marginBottom: '2rem'}}>
             <h1>{build.title}</h1>
             {build.purpose && (
               <span className="badge badge--secondary">{build.purpose}</span>
             )}
             <p className="build-detail__author">
-              by{' '}
+              By{' '}
               {build.creator_display_name ? (
                 <Link to={`/profile/${build.creator_id}`}>{build.creator_display_name}</Link>
               ) : (
@@ -341,7 +338,7 @@ export default function BuildDetailPage() {
           </div>
 
           {/* Parts Table */}
-          <div className="build-detail__parts">
+          <div className="build-detail__parts" style={{marginBottom: '1rem'}}>
             <h2>Parts List</h2>
             <table className="parts-table">
               <thead>
@@ -376,48 +373,52 @@ export default function BuildDetailPage() {
               <tfoot>
                 <tr>
                   <td colSpan="2"><strong>Total</strong></td>
-                  <td><strong>{formatCurrency(totalPrice)}</strong></td>
+                  <td><strong>{formatCurrency(build.total_price)}</strong></td>
                 </tr>
               </tfoot>
             </table>
           </div>
 
           {/* Compatibility */}
-          {compatIssues.length > 0 && (
-            <div className="build-detail__compatibility">
+          {compatIssues.length === 0 ? (
+              <div className="card" style={{marginBottom: '2rem'}}>
+                <h2>Compatibility Check</h2>
+                <div className="alert alert--success" style={{marginBottom: '1rem', marginTop: '1rem'}}>
+                  <p>All parts are compatible!</p>
+                </div>
+              </div>
+          ) : (
+              <div className="card" style={{marginBottom: '2rem'}}>
               <h2>Compatibility Check</h2>
               {errors.length > 0 && (
                 <div className="compat-issues compat-issues--error">
                   <h3>Errors ({errors.length})</h3>
                   <ul>
                     {errors.map((issue, i) => (
-                      <li key={i}>{issue.message}</li>
+                      <li key={i}>
+                        {issue.message}
+                      </li>
                     ))}
                   </ul>
                 </div>
               )}
               {warnings.length > 0 && (
                 <div className="compat-issues compat-issues--warning">
-                  <h3>Warnings ({warnings.length})</h3>
+                  <h3 style={{marginBottom: '0.5rem'}}>Warnings ({warnings.length})</h3>
                   <ul>
                     {warnings.map((issue, i) => (
-                      <li key={i}>{issue.message}</li>
+                      <ul className="alert alert--warning" key={i}>
+                        {issue.message}
+                      </ul>
                     ))}
                   </ul>
                 </div>
               )}
             </div>
           )}
-          {compatIssues.length === 0 && parts.length > 0 && (
-            <div className="build-detail__compatibility">
-              <div className="compat-issues compat-issues--success">
-                <p>All parts are compatible!</p>
-              </div>
-            </div>
-          )}
 
-          {/* Social Actions */}
-          <div className="social-actions">
+          {/* likes, avg rating */}
+          <div className="social-actions card" style={{marginBottom: '2rem'}}>
             {isAuthenticated && (
               <button
                 className={hasLiked ? 'like-btn like-btn--liked' : 'like-btn'}
@@ -478,30 +479,44 @@ export default function BuildDetailPage() {
           )}
 
           {/* Ratings List */}
-          {ratings.length > 0 && (
-            <div className="build-detail__ratings">
-              <h2>Reviews ({ratings.length})</h2>
-              <div className="ratings-list">
-                {ratings.map(r => (
-                  <div key={r.id} className="rating-item">
-                    <div className="rating-item__header">
-                      <span className="rating-item__user">
-                        {r.creator_display_name || 'Unknown User'}
-                      </span>
-                      <StarDisplay score={r.score} />
-                      <span className="rating-item__date">{formatDate(r.created_at)}</span>
-                    </div>
-                    {r.review_text && (
-                      <p className="rating-item__review">{r.review_text}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
+          <div className="card" style={{marginBottom: '2rem'}}>
+            <div className="card__title">
+              <h2>Ratings ({ratings.length})</h2>
             </div>
-          )}
+            {ratings.length === 0 ? (
+                <p className="text-muted">No ratings yet.</p>
+            ) : (
+                <div className="card__body">
+                  <div className="rating-list">
+                    {ratings.map((rating) => (
+                        <div key={rating.id} style={{ borderBottom: '1px solid var(--color-border, #eee)', padding: '0.75rem 0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <strong>
+                              {rating.user_id ? (
+                                  <Link to={`/profile/${rating.user_id}`}>
+                                    {rating.creator_display_name || 'Unknown User'}
+                                  </Link>
+                              ) : (
+                                  'Unknown User'
+                              )}
+                            </strong>
+                            <span>
+                      {'★'.repeat(rating.score)}{'☆'.repeat(5 - rating.score)}
+                    </span>
+                          </div>
+                          {rating.review_text && <p style={{ marginTop: '0.25rem' }}>{rating.review_text}</p>}
+                          <span className="text--muted" style={{ fontSize: '0.85rem' }}>
+                    {formatDate(rating.created_at)}
+                  </span>
+                        </div>
+                    ))}
+                  </div>
+                </div>
+            )}
+        </div>
 
           {/* Comments Section */}
-          <div className="build-detail__comments">
+          <div className="build-detail__comments card">
             <h2>Comments ({comments.length})</h2>
 
             {commentTree.length > 0 ? (
@@ -521,62 +536,62 @@ export default function BuildDetailPage() {
                 ))}
               </div>
             ) : (
-              <p className="comments-empty">No comments yet. Be the first to share your thoughts!</p>
-            )}
-
-            {/* New comment form */}
-            {isAuthenticated && (
-              <form className="comment-form" onSubmit={handleSubmitComment}>
-                <h3>Add a Comment</h3>
-                <textarea
-                  className="form__textarea"
-                  placeholder="Share your thoughts on this build..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  rows={3}
-                />
-                <button type="submit" className="btn btn--primary" disabled={!newComment.trim()}>
-                  Post Comment
-                </button>
-              </form>
-            )}
-            {!isAuthenticated && (
-              <p className="comments-login">
-                <Link to="/login">Log in</Link> to leave a comment or rating.
-              </p>
+                <p className="comments-empty">No comments yet. Be the first to share your thoughts!</p>
             )}
           </div>
         </div>
 
         {/* Sidebar */}
         <div className="build-detail__sidebar">
-          <div className="card">
-            <div className="card__body">
-              <h3 className="card__title">Build Info</h3>
-              <dl className="info-list">
-                <dt>Creator</dt>
-                <dd>
-                  {build.creator_display_name ? (
-                    <Link to={`/profile/${build.creator_id}`}>{build.creator_display_name}</Link>
-                  ) : (
-                    'Unknown'
-                  )}
-                </dd>
-                <dt>Created</dt>
-                <dd>{formatDate(build.created_at)}</dd>
-                <dt>Status</dt>
-                <dd>
-                  <span className="badge">{build.status}</span>
-                </dd>
-                <dt>Total Price</dt>
-                <dd>{formatCurrency(totalPrice)}</dd>
-              </dl>
 
+          {/* Build info */}
+          <div className="card" style={{marginBottom: '2rem'}}>
+            <div className="card__body">
+              <h3 className="card__header">Build Info</h3>
+              <div className="card__body">
+
+                <dl className="build-detail__info">
+                  <dt style={{fontWeight: 'bold'}}>Creator</dt>
+                  <dd style={{fontWeight: 'bold'}}>
+                    {build.creator_display_name ?
+                        ( <Link to={`/profile/${build.creator_id}`}>{build.creator_display_name}</Link> )
+                        :
+                        ( 'Unknown' )
+                    }
+                  </dd>
+                </dl>
+
+                <dl className="build-detail__info">
+                  <dt>Created</dt>
+                  <dd>{formatDate(build.created_at)}</dd>
+                </dl>
+
+                <dl className="build-detail__info">
+                  <dt>Status</dt>
+                  <dd>
+                    <span className="badge--success badge">{build.status}</span>
+                  </dd>
+                </dl>
+                <dl className="build-detail__info">
+                  <dt>Total Price</dt>
+                  <dd>{formatCurrency(build.total_price)}</dd>
+                </dl>
+              </div>
+
+              {/* Build actions */}
               {isOwner && (
-                <div className="card__actions">
-                  <Link to={`/builds/${build.id}/edit`} className="btn btn--secondary btn--block">
-                    Edit Build
-                  </Link>
+                <div className="build-card__actions">
+                    <div className="build-actions__edit-del">
+                        <Link to={`/builds/${build.id}/edit`} className="btn btn--secondary btn--block">
+                            Edit Build
+                        </Link>
+                        <button
+                            className="btn btn--danger btn--block"
+                            onClick={() => handleDelete(build.id, build.title)}
+                        >
+                            Delete
+                        </button>
+                    </div>
                   {isBuilder && build.status === 'published' && (
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.5rem 0' }}>
                       <input
@@ -620,7 +635,7 @@ export default function BuildDetailPage() {
 
           {/* Request Form */}
           {showRequestForm && (
-            <div className="card">
+            <div className="card" style={{marginBottom: '2rem'}}>
               <div className="card__body">
                 <h3 className="card__title">Post Request</h3>
                 <form onSubmit={handleCreateRequest}>
