@@ -733,6 +733,18 @@ img { max-width: 100%; display: block; }
   /*outline: #16a34a solid 1px;*/
 }
 
+.build-card__actions {
+  /*outline: #16a34a solid 1px;*/
+  display: grid;
+  grid-gap: 0.5rem;
+}
+
+.build-actions__edit-del {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
 .parts-table {
   width: 100%;
   border-collapse: collapse;

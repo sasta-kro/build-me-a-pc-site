@@ -102,7 +102,7 @@ export default function BuildDetailPage() {
     getItemById, getBuildParts, getRatings, getComments,
     isLiked, toggleLike, addRating, addComment, createItem,
     updateBuild, getBuilders, getRequests, getUserRating,
-    checkCompatibility,
+    checkCompatibility, removeItem
   } = useData();
   const { user, isAuthenticated, isBuilder } = useAuth();
 
@@ -123,7 +123,6 @@ export default function BuildDetailPage() {
   const [hasRated, setHasRated] = useState(false);
 
   // Comment form
-  const [newComment, setNewComment] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const [replyText, setReplyText] = useState('');
 
@@ -239,18 +238,14 @@ export default function BuildDetailPage() {
     }
   }, [user, id, newScore, newReview, addRating, getRatings, getItemById]);
 
-  const handleSubmitComment = useCallback(async (e) => {
-    e.preventDefault();
-    if (!user || !newComment.trim()) return;
-    try {
-      await addComment(id, { content: newComment.trim(), parent_id: null });
-      setNewComment('');
-      const updatedComments = await getComments(id);
-      setComments(updatedComments);
-    } catch (err) {
-      console.error('Failed to submit comment:', err);
-    }
-  }, [user, id, newComment, addComment, getComments]);
+    const handleDelete = async (buildId, buildName) => {
+        if (!window.confirm(`Are you sure you want to delete "${buildName}"?`)) return;
+        try {
+            await removeItem('builds', buildId);
+        } catch (err) {
+            setError(err.response?.data?.error || err.message);
+        }
+    };
 
   const handleCreateRequest = useCallback(async (e) => {
     e.preventDefault();
@@ -575,11 +570,20 @@ export default function BuildDetailPage() {
                 </dl>
               </div>
 
+              {/* Build actions */}
               {isOwner && (
-                <div className="card__actions">
-                  <Link to={`/builds/${build.id}/edit`} className="btn btn--secondary btn--block">
-                    Edit Build
-                  </Link>
+                <div className="build-card__actions">
+                    <div className="build-actions__edit-del">
+                        <Link to={`/builds/${build.id}/edit`} className="btn btn--secondary btn--block">
+                            Edit Build
+                        </Link>
+                        <button
+                            className="btn btn--danger btn--block"
+                            onClick={() => handleDelete(build.id, build.title)}
+                        >
+                            Delete
+                        </button>
+                    </div>
                   {isBuilder && build.status === 'published' && (
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.5rem 0' }}>
                       <input
