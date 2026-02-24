@@ -306,7 +306,6 @@ export default function BuildDetailPage() {
   }
 
   const isOwner = user && user.id === build.creator_id;
-  const totalPrice = parts.reduce((sum, bp) => sum + (bp.part ? bp.part.price : 0), 0);
   const commentTree = buildCommentTree(comments);
   const errors = compatIssues.filter(i => i.severity === 'error');
   const warnings = compatIssues.filter(i => i.severity === 'warning');
@@ -374,7 +373,7 @@ export default function BuildDetailPage() {
               <tfoot>
                 <tr>
                   <td colSpan="2"><strong>Total</strong></td>
-                  <td><strong>{formatCurrency(totalPrice)}</strong></td>
+                  <td><strong>{formatCurrency(build.total_price)}</strong></td>
                 </tr>
               </tfoot>
             </table>
@@ -575,7 +574,7 @@ export default function BuildDetailPage() {
                 </dl>
                 <dl className="build-detail__info">
                   <dt>Total Price</dt>
-                  <dd>{formatCurrency(totalPrice)}</dd>
+                  <dd>{formatCurrency(build.total_price)}</dd>
                 </dl>
               </div>
 
