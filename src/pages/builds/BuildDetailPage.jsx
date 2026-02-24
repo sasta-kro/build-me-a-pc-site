@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import {useParams, Link, Navigate, useNavigate} from 'react-router-dom';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDate, timeAgo, formatRating } from '../../utils/helpers';
@@ -98,6 +98,7 @@ function CommentItem({ comment, isAuthenticated, replyTo, setReplyTo, replyText,
 
 export default function BuildDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate()
   const {
     getItemById, getBuildParts, getRatings, getComments,
     isLiked, toggleLike, addRating, addComment, createItem,
@@ -238,14 +239,15 @@ export default function BuildDetailPage() {
     }
   }, [user, id, newScore, newReview, addRating, getRatings, getItemById]);
 
-    const handleDelete = async (buildId, buildName) => {
-        if (!window.confirm(`Are you sure you want to delete "${buildName}"?`)) return;
-        try {
-            await removeItem('builds', buildId);
-        } catch (err) {
-            setError(err.response?.data?.error || err.message);
-        }
-    };
+  const handleDelete = async (buildId, buildName) => {
+      if (!window.confirm(`Are you sure you want to delete "${buildName}"?`)) return;
+      try {
+          await removeItem('builds', buildId);
+          navigate('/builds')
+      } catch (err) {
+          setError(err.response?.data?.error || err.message);
+      }
+  };
 
   const handleCreateRequest = useCallback(async (e) => {
     e.preventDefault();
