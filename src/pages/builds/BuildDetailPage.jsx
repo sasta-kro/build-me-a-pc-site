@@ -337,7 +337,7 @@ export default function BuildDetailPage() {
           </div>
 
           {/* Parts Table */}
-          <div className="build-detail__parts">
+          <div className="build-detail__parts" style={{marginBottom: '1rem'}}>
             <h2>Parts List</h2>
             <table className="parts-table">
               <thead>
@@ -380,8 +380,11 @@ export default function BuildDetailPage() {
 
           {/* Compatibility */}
           {compatIssues.length === 0 ? (
-              <div className="alert alert--success" style={{marginBottom: '1rem', marginTop: '1rem'}}>
-                <p>All parts are compatible!</p>
+              <div className="card" style={{marginBottom: '2rem'}}>
+                <h2>Compatibility Check</h2>
+                <div className="alert alert--success" style={{marginBottom: '1rem', marginTop: '1rem'}}>
+                  <p>All parts are compatible!</p>
+                </div>
               </div>
           ) : (
               <div className="card" style={{marginBottom: '2rem'}}>
@@ -391,17 +394,21 @@ export default function BuildDetailPage() {
                   <h3>Errors ({errors.length})</h3>
                   <ul>
                     {errors.map((issue, i) => (
-                      <li key={i}>{issue.message}</li>
+                      <li key={i}>
+                        {issue.message}
+                      </li>
                     ))}
                   </ul>
                 </div>
               )}
               {warnings.length > 0 && (
                 <div className="compat-issues compat-issues--warning">
-                  <h3>Warnings ({warnings.length})</h3>
+                  <h3 style={{marginBottom: '0.5rem'}}>Warnings ({warnings.length})</h3>
                   <ul>
                     {warnings.map((issue, i) => (
-                      <li key={i}>{issue.message}</li>
+                      <ul className="alert alert--warning" key={i}>
+                        {issue.message}
+                      </ul>
                     ))}
                   </ul>
                 </div>
