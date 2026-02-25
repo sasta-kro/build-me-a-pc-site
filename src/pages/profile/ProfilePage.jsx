@@ -74,9 +74,17 @@ export default function ProfilePage() {
       {/* Profile Header */}
       <div className="profile-header">
         <div className="profile-header__avatar">
-          {profileUser.display_name
-            ? profileUser.display_name.charAt(0).toUpperCase()
-            : '?'}
+          {profileUser.avatar_url ? (
+            <img
+              src={profileUser.avatar_url}
+              alt={profileUser.display_name || 'User'}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+            />
+          ) : (
+            profileUser.display_name
+              ? profileUser.display_name.charAt(0).toUpperCase()
+              : '?'
+          )}
         </div>
         <div className="profile-header__info">
           <h1>{profileUser.display_name || 'Anonymous'}</h1>

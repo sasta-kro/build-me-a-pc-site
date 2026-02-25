@@ -31,7 +31,31 @@ export default function Navbar() {
                 </>
               )}
               <div className="navbar__user">
-                <Link to={`/profile/${user.id}`}>{user.display_name}</Link>
+                <Link to={`/profile/${user.id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.display_name}
+                      style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--color-primary)',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.85rem',
+                      fontWeight: '600'
+                    }}>
+                      {user.display_name?.charAt(0).toUpperCase() || '?'}
+                    </div>
+                  )}
+                  <span>{user.display_name}</span>
+                </Link>
                 <button onClick={handleLogout} className="btn btn--sm btn--outline">Logout</button>
               </div>
             </>

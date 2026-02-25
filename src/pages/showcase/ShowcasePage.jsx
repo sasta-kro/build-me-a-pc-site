@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useData } from '../../contexts/DataContext';
 import { formatCurrency, formatRating } from '../../utils/helpers';
 
+const PLACEHOLDER_IMAGE = 'https://www.shutterstock.com/image-vector/gaming-pc-wireframe-drawing-line-600nw-2588972631.jpg';
+
 const AVAILABILITY_BADGE = {
   available: 'badge--success',
   sold_out: 'badge--warning',
@@ -99,8 +101,8 @@ export default function ShowcasePage() {
             >
               <img
                 className="card__image"
-                src="https://www.shutterstock.com/image-vector/gaming-pc-wireframe-drawing-line-600nw-2588972631.jpg"
-                alt="PC Build"
+                src={build.image_urls?.[0] || PLACEHOLDER_IMAGE}
+                alt={build.title}
               />
               <div className="card__body">
                 <h3 className="card__title">{build.title}</h3>

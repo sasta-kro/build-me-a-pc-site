@@ -4,6 +4,8 @@ import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDate, formatRating } from '../../utils/helpers';
 
+const PLACEHOLDER_IMAGE = 'https://www.shutterstock.com/image-vector/gaming-pc-wireframe-drawing-line-600nw-2588972631.jpg';
+
 const AVAILABILITY_BADGE = {
   available: 'badge--success',
   sold_out: 'badge--warning',
@@ -325,6 +327,35 @@ export default function ShowcaseDetailPage() {
             </div>
           </div>
 
+          {/* Image Gallery */}
+          {build.image_urls && build.image_urls.length > 0 && (
+            <div className="build-gallery card" style={{ marginBottom: '2rem' }}>
+              <div className="card__body">
+                <div className="build-gallery__main">
+                  <img
+                    src={build.image_urls[0]}
+                    alt={build.title}
+                    className="build-gallery__image"
+                    style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', borderRadius: 'var(--radius-lg, 8px)' }}
+                  />
+                </div>
+                {build.image_urls.length > 1 && (
+                  <div className="build-gallery__thumbs" style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', overflowX: 'auto' }}>
+                    {build.image_urls.map((url, idx) => (
+                      <img
+                        key={idx}
+                        src={url}
+                        alt={`${build.title} ${idx + 1}`}
+                        className="build-gallery__thumb"
+                        style={{ width: '80px', height: '60px', objectFit: 'cover', borderRadius: 'var(--radius-sm, 4px)', cursor: 'pointer', opacity: idx === 0 ? 1 : 0.6 }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Parts table */}
           {parts.length > 0 && (
             <div className="card" style={{ marginBottom: '2rem' }}>
@@ -335,6 +366,7 @@ export default function ShowcaseDetailPage() {
                 <table className="table">
                   <thead>
                     <tr>
+                      <th>Image</th>
                       <th>Category</th>
                       <th>Part</th>
                       <th>Price</th>
@@ -343,6 +375,13 @@ export default function ShowcaseDetailPage() {
                   <tbody>
                     {parts.map((bp) => (
                       <tr key={bp.id}>
+                        <td>
+                          <img
+                            src={bp.part?.image_url || PLACEHOLDER_IMAGE}
+                            alt={bp.part?.name || 'Part'}
+                            style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '4px' }}
+                          />
+                        </td>
                         <td>{bp.category ? bp.category.name : 'Unknown'}</td>
                         <td>{bp.part ? bp.part.name : 'Unknown Part'}</td>
                         <td>{bp.part ? formatCurrency(bp.part.price) : '-'}</td>
@@ -351,7 +390,7 @@ export default function ShowcaseDetailPage() {
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan="2"><strong>Total</strong></td>
+                      <td colSpan="3"><strong>Total</strong></td>
                       <td><strong>{formatCurrency(build.total_price || 0)}</strong></td>
                     </tr>
                   </tfoot>

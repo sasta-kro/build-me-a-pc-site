@@ -4,6 +4,8 @@ import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 
+const PLACEHOLDER_IMAGE = 'https://www.shutterstock.com/image-vector/gaming-pc-wireframe-drawing-line-600nw-2588972631.jpg';
+
 const STATUS_BADGE = {
   open: 'badge--success',
   claimed: 'badge--primary',
@@ -84,8 +86,8 @@ export default function RequestsPage() {
             >
               <img
                 className="card__image"
-                src="https://www.shutterstock.com/image-vector/gaming-pc-wireframe-drawing-line-600nw-2588972631.jpg"
-                alt="PC Build"
+                src={request.build_image_urls?.[0] || PLACEHOLDER_IMAGE}
+                alt={request.build_title || 'PC Build'}
               />
               <div className="card__header">
                 <h3 className="card__title">
