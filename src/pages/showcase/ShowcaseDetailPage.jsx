@@ -4,6 +4,8 @@ import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDate, formatRating } from '../../utils/helpers';
 
+const PLACEHOLDER_IMAGE = 'https://www.shutterstock.com/image-vector/gaming-pc-wireframe-drawing-line-600nw-2588972631.jpg';
+
 const AVAILABILITY_BADGE = {
   available: 'badge--success',
   sold_out: 'badge--warning',
@@ -15,7 +17,7 @@ export default function ShowcaseDetailPage() {
   const {
     getItemById, getBuildParts, getBuilderProfile,
     getRatings, getUserRating, addRating, getComments, addComment,
-    isLiked, toggleLike, createInquiry,
+    isLiked, toggleLike, createInquiry, getInquiries, updateInquiry,
   } = useData();
   const { user, isAuthenticated } = useAuth();
 
@@ -28,6 +30,9 @@ export default function ShowcaseDetailPage() {
   const [likeCount, setLikeCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [inquiries, setInquiries] = useState([]);
+  const [processingInquiryId, setProcessingInquiryId] = useState(null);
 
   // Inquiry form state
   const [inquiryMessage, setInquiryMessage] = useState('');
@@ -75,6 +80,16 @@ export default function ShowcaseDetailPage() {
       if (user) {
         setLiked(results[4]);
         setHasRated(!!results[5]);
+      }
+
+      // Load inquiries for builder owner
+      if (user && user.id === b.creator_id) {
+        try {
+          const inquiriesData = await getInquiries({ build_id: b.id });
+          setInquiries(inquiriesData);
+        } catch {
+          setInquiries([]);
+        }
       }
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -183,6 +198,18 @@ export default function ShowcaseDetailPage() {
       setInquirySubmitted(true);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
+    }
+  };
+
+  const handleInquiryStatus = async (inquiryId, status) => {
+    setProcessingInquiryId(inquiryId);
+    try {
+      const updated = await updateInquiry(inquiryId, status);
+      setInquiries(prev => prev.map(i => i.id === inquiryId ? { ...i, status: updated.status } : i));
+    } catch (err) {
+      setError(err.response?.data?.error || err.message);
+    } finally {
+      setProcessingInquiryId(null);
     }
   };
 
@@ -325,6 +352,36 @@ export default function ShowcaseDetailPage() {
             </div>
           </div>
 
+          {/* Image Gallery */}
+          {build.image_urls && build.image_urls.length > 0 && (
+            <div className="build-gallery card" style={{ marginBottom: '2rem' }}>
+              <div className="card__body">
+                <div className="build-gallery__main">
+                  <img
+                    src={build.image_urls[selectedImageIndex]}
+                    alt={build.title}
+                    className="build-gallery__image"
+                    style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', borderRadius: 'var(--radius-lg, 8px)' }}
+                  />
+                </div>
+                {build.image_urls.length > 1 && (
+                  <div className="build-gallery__thumbs" style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', overflowX: 'auto' }}>
+                    {build.image_urls.map((url, idx) => (
+                      <img
+                        key={idx}
+                        src={url}
+                        alt={`${build.title} ${idx + 1}`}
+                        className="build-gallery__thumb"
+                        onClick={() => setSelectedImageIndex(idx)}
+                        style={{ width: '80px', height: '60px', objectFit: 'cover', borderRadius: 'var(--radius-sm, 4px)', cursor: 'pointer', opacity: idx === selectedImageIndex ? 1 : 0.6, border: idx === selectedImageIndex ? '2px solid var(--color-primary)' : '2px solid transparent' }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Parts table */}
           {parts.length > 0 && (
             <div className="card" style={{ marginBottom: '2rem' }}>
@@ -335,6 +392,7 @@ export default function ShowcaseDetailPage() {
                 <table className="table">
                   <thead>
                     <tr>
+                      <th>Image</th>
                       <th>Category</th>
                       <th>Part</th>
                       <th>Price</th>
@@ -343,6 +401,13 @@ export default function ShowcaseDetailPage() {
                   <tbody>
                     {parts.map((bp) => (
                       <tr key={bp.id}>
+                        <td>
+                          <img
+                            src={bp.part?.image_url || PLACEHOLDER_IMAGE}
+                            alt={bp.part?.name || 'Part'}
+                            style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '4px' }}
+                          />
+                        </td>
                         <td>{bp.category ? bp.category.name : 'Unknown'}</td>
                         <td>{bp.part ? bp.part.name : 'Unknown Part'}</td>
                         <td>{bp.part ? formatCurrency(bp.part.price) : '-'}</td>
@@ -351,7 +416,7 @@ export default function ShowcaseDetailPage() {
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan="2"><strong>Total</strong></td>
+                      <td colSpan="3"><strong>Total</strong></td>
                       <td><strong>{formatCurrency(build.total_price || 0)}</strong></td>
                     </tr>
                   </tfoot>
@@ -388,6 +453,59 @@ export default function ShowcaseDetailPage() {
                     <button type="submit" className="btn btn--primary">Send Inquiry</button>
                   </form>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Inquiries management for builder owner */}
+          {isOwner && inquiries.length > 0 && (
+            <div className="card" style={{ marginBottom: '2rem' }}>
+              <div className="card__header">
+                <h2>Inquiries ({inquiries.length})</h2>
+              </div>
+              <div className="card__body">
+                {inquiries.map((inquiry) => (
+                  <div key={inquiry.id} style={{ borderBottom: '1px solid var(--color-border, #eee)', padding: '1rem 0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                      <strong>
+                        {inquiry.user_id ? (
+                          <Link to={`/profile/${inquiry.user_id}`}>{inquiry.user_display_name || 'Unknown User'}</Link>
+                        ) : (
+                          'Unknown User'
+                        )}
+                      </strong>
+                      <span className={`badge ${
+                        inquiry.status === 'accepted' ? 'badge--success' :
+                        inquiry.status === 'declined' ? 'badge--error' :
+                        'badge--warning'
+                      }`}>
+                        {inquiry.status}
+                      </span>
+                    </div>
+                    {inquiry.message && <p style={{ marginBottom: '0.5rem' }}>{inquiry.message}</p>}
+                    <span className="text--muted" style={{ fontSize: '0.85rem' }}>
+                      {formatDate(inquiry.created_at)}
+                    </span>
+                    {inquiry.status === 'pending' && (
+                      <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          className="btn btn--primary btn--sm"
+                          onClick={() => handleInquiryStatus(inquiry.id, 'accepted')}
+                          disabled={processingInquiryId === inquiry.id}
+                        >
+                          Accept
+                        </button>
+                        <button
+                          className="btn btn--secondary btn--sm"
+                          onClick={() => handleInquiryStatus(inquiry.id, 'declined')}
+                          disabled={processingInquiryId === inquiry.id}
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}

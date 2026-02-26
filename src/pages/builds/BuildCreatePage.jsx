@@ -4,6 +4,7 @@ import { useData } from '../../contexts/DataContext';
 import { formatCurrency } from '../../utils/helpers';
 
 const REQUIRED_PARTS = ['cpu', 'motherboard', 'ram', 'psu', 'case'];
+const PLACEHOLDER_IMAGE = 'https://www.shutterstock.com/image-vector/gaming-pc-wireframe-drawing-line-600nw-2588972631.jpg';
 
 function getMissingParts(selectedParts) {
   const present = Object.keys(selectedParts).filter(k => selectedParts[k]);
@@ -19,6 +20,7 @@ export default function BuildCreatePage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [purpose, setPurpose] = useState('');
+  const [imageUrls, setImageUrls] = useState([]);
 
   // Request-specific fields
   const [budget, setBudget] = useState('');
@@ -153,7 +155,7 @@ export default function BuildCreatePage() {
         status,
         build_type: 'personal',
         availability_status: null,
-        image_urls: [],
+        image_urls: imageUrls.filter(url => url.trim()),
         specs_summary: null,
         like_count: 0,
         rating_avg: 0,
@@ -241,6 +243,41 @@ export default function BuildCreatePage() {
               />
             </div>
 
+            <div className="form-group">
+              <label className="form-label">Build Images</label>
+              <div className="image-urls-input">
+                {imageUrls.map((url, index) => (
+                  <div key={index} className="image-urls-input__row">
+                    <input
+                      type="url"
+                      className="form-input"
+                      value={url}
+                      onChange={(e) => {
+                        const newUrls = [...imageUrls];
+                        newUrls[index] = e.target.value;
+                        setImageUrls(newUrls);
+                      }}
+                      placeholder="https://example.com/image.jpg"
+                    />
+                    <button
+                      type="button"
+                      className="btn btn--danger btn--sm"
+                      onClick={() => setImageUrls(imageUrls.filter((_, i) => i !== index))}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="btn btn--outline btn--sm"
+                  onClick={() => setImageUrls([...imageUrls, ''])}
+                >
+                  + Add Image URL
+                </button>
+              </div>
+            </div>
+
             {isRequestMode && (
               <>
                 <div className="form-group">
@@ -311,7 +348,7 @@ export default function BuildCreatePage() {
           <div className="summary-panel">
             <img
               className="summary-panel__image"
-              src="https://www.shutterstock.com/image-vector/gaming-pc-wireframe-drawing-line-600nw-2588972631.jpg"
+              src={imageUrls.find(url => url.trim()) || PLACEHOLDER_IMAGE}
               alt="PC Build"
             />
             <h2>Build Summary</h2>

@@ -6,7 +6,7 @@ import { formatCurrency, formatDate, formatRating } from '../../utils/helpers';
 
 export default function BuilderDashboardPage() {
   const { user } = useAuth();
-  const { getBuilds, getOffers, getBuilderProfile, getInquiries } = useData();
+  const { getBuilds, getOffers, getBuilderProfile, getInquiries, updateInquiry } = useData();
 
   const [activeTab, setActiveTab] = useState('offers');
   const [offers, setOffers] = useState([]);
@@ -20,6 +20,7 @@ export default function BuilderDashboardPage() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [processingId, setProcessingId] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -55,7 +56,8 @@ export default function BuilderDashboardPage() {
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case 'accepted': return 'badge badge--success';
-      case 'rejected': return 'badge badge--error';
+      case 'rejected':
+      case 'declined': return 'badge badge--error';
       case 'pending': return 'badge badge--warning';
       default: return 'badge badge--secondary';
     }
@@ -67,6 +69,18 @@ export default function BuilderDashboardPage() {
       case 'sold_out': return 'badge badge--error';
       case 'discontinued': return 'badge badge--secondary';
       default: return 'badge badge--secondary';
+    }
+  };
+
+  const handleInquiryStatus = async (inquiryId, status) => {
+    setProcessingId(inquiryId);
+    try {
+      const updated = await updateInquiry(inquiryId, status);
+      setInquiries(prev => prev.map(i => i.id === inquiryId ? { ...i, status: updated.status } : i));
+    } catch (err) {
+      setError(err.response?.data?.error || err.message);
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -228,6 +242,24 @@ export default function BuilderDashboardPage() {
                     <div className="card__meta">
                       <span className="card__date">{formatDate(inquiry.created_at)}</span>
                     </div>
+                    {inquiry.status === 'pending' && (
+                      <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          className="btn btn--primary btn--sm"
+                          onClick={() => handleInquiryStatus(inquiry.id, 'accepted')}
+                          disabled={processingId === inquiry.id}
+                        >
+                          Accept
+                        </button>
+                        <button
+                          className="btn btn--secondary btn--sm"
+                          onClick={() => handleInquiryStatus(inquiry.id, 'declined')}
+                          disabled={processingId === inquiry.id}
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

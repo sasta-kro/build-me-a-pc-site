@@ -4,6 +4,8 @@ import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDate, formatRating } from '../../utils/helpers';
 
+const PLACEHOLDER_IMAGE = 'https://www.shutterstock.com/image-vector/gaming-pc-wireframe-drawing-line-600nw-2588972631.jpg';
+
 const STATUS_BADGE = {
   open: 'badge--success',
   claimed: 'badge--primary',
@@ -26,6 +28,7 @@ export default function RequestDetailPage() {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   // Offer form state
   const [offerFee, setOfferFee] = useState(0);
@@ -208,31 +211,6 @@ export default function RequestDetailPage() {
             <span>{formatDate(request.created_at)}</span>
           </div>
 
-          {/* Parts list */}
-          {parts.length > 0 && (
-            <div style={{ marginTop: '1.5rem' }}>
-              <h3>Build Parts</h3>
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Category</th>
-                    <th>Part</th>
-                    <th>Price</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {parts.map((bp) => (
-                    <tr key={bp.id}>
-                      <td>{bp.category ? bp.category.name : 'Unknown'}</td>
-                      <td>{bp.part ? bp.part.name : 'Unknown Part'}</td>
-                      <td>{bp.part ? formatCurrency(bp.part.price) : '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
           {/* Owner actions */}
           {isOwner && (
             <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem' }}>
@@ -250,6 +228,79 @@ export default function RequestDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Image Gallery */}
+      {((request.build_image_urls && request.build_image_urls.length > 0) || (build?.image_urls && build.image_urls.length > 0)) && (
+        <div className="build-gallery card" style={{ marginBottom: '2rem' }}>
+          <div className="card__body">
+            <div className="build-gallery__main">
+              <img
+                src={(request.build_image_urls || build.image_urls)[selectedImageIndex]}
+                alt={request.build_title || 'Build'}
+                className="build-gallery__image"
+                style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', borderRadius: 'var(--radius-lg, 8px)' }}
+              />
+            </div>
+            {(request.build_image_urls || build.image_urls).length > 1 && (
+              <div className="build-gallery__thumbs" style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', overflowX: 'auto' }}>
+                {(request.build_image_urls || build.image_urls).map((url, idx) => (
+                  <img
+                    key={idx}
+                    src={url}
+                    alt={`${request.build_title || 'Build'} ${idx + 1}`}
+                    className="build-gallery__thumb"
+                    onClick={() => setSelectedImageIndex(idx)}
+                    style={{ width: '80px', height: '60px', objectFit: 'cover', borderRadius: 'var(--radius-sm, 4px)', cursor: 'pointer', opacity: idx === selectedImageIndex ? 1 : 0.6, border: idx === selectedImageIndex ? '2px solid var(--color-primary)' : '2px solid transparent' }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Parts list */}
+      {parts.length > 0 && (
+        <div className="card" style={{ marginBottom: '2rem' }}>
+          <div className="card__header">
+            <h3>Build Parts</h3>
+          </div>
+          <div className="card__body">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Image</th>
+                  <th>Category</th>
+                  <th>Part</th>
+                  <th>Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {parts.map((bp) => (
+                  <tr key={bp.id}>
+                    <td>
+                      <img
+                        src={bp.part?.image_url || PLACEHOLDER_IMAGE}
+                        alt={bp.part?.name || 'Part'}
+                        style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '4px' }}
+                      />
+                    </td>
+                    <td>{bp.category ? bp.category.name : 'Unknown'}</td>
+                    <td>{bp.part ? bp.part.name : 'Unknown Part'}</td>
+                    <td>{bp.part ? formatCurrency(bp.part.price) : '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan="3"><strong>Total</strong></td>
+                  <td><strong>{formatCurrency(build?.total_price || request.build_total_price || 0)}</strong></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Offers Section */}
       <div>

@@ -92,7 +92,7 @@ export function DataProvider({ children }) {
   }, []);
 
   const updateBuild = useCallback(async (buildId, updates) => {
-    const { data } = await api.put(`/builds/${buildId}`, updates);
+    const { data } = await api.patch(`/builds/${buildId}`, updates);
     return data.build || data;
   }, []);
 
@@ -233,6 +233,11 @@ export function DataProvider({ children }) {
     return data;
   }, []);
 
+  const updateInquiry = useCallback(async (inquiryId, status) => {
+    const { data } = await api.put(`/inquiries/${inquiryId}`, { status });
+    return data;
+  }, []);
+
   // ─── Builder Applications ─────────────────────────────────
   const getApplications = useCallback(async (filters = {}) => {
     const { data } = await api.get('/applications', { params: filters });
@@ -314,7 +319,7 @@ export function DataProvider({ children }) {
     getUser, getUsers, updateUser, banUser, changeUserRole, getBuilders,
     getBuilderProfile, updateBuilderProfile,
     // Inquiries & Applications
-    getInquiries, createInquiry, getApplications, getMyApplications, reviewApplication,
+    getInquiries, createInquiry, updateInquiry, getApplications, getMyApplications, reviewApplication,
     // Compatibility
     checkCompatibility,
     getCompatibilityRules,
